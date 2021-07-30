@@ -1,0 +1,57 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pebble
+spec:
+  selector:
+    matchLabels:
+      app: pebble
+  template:
+    metadata:
+      labels:
+        app: pebble
+    spec:
+      containers:
+        - name: pebble
+          image: letsencrypt/pebble:latest
+          args:
+            - -config /config/pebble-config.json
+          volumeMounts:
+            - mountPath: "/config/"
+              name: pebble-config
+              subPath: "pebble-config.json"
+            - mountPath: "/certs/"
+              name: pebble-certs
+      volumes:
+        - name: config
+          configMap:
+            name: pebble-config
+        - name: certs
+          secret:
+            secretName: pebble-certs
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: pebble-certs
+data:
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: pebble-config
+data:
+  pebble-config.json: |
+    {
+      "pebble": {
+        "listenAddress": "0.0.0.0:14000",
+        "managementListenAddress": "0.0.0.0:15000",
+        "certificate": /certs/cert.pem",
+        "privateKey": "/certs/key.pem",
+        "httpPort": 8080,
+        "tlsPort": 5001,
+        "ocspResponderURL": "",
+        "externalAccountBindingRequired": false
+      }
+   }

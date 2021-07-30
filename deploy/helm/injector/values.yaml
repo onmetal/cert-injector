@@ -1,0 +1,32 @@
+image:
+  repository: yotsyni/cert-injector
+  tag: 0.1.4
+  pullPolicy: IfNotPresent
+
+resources:
+#  limits:
+#    cpu: 100m
+#    memory: 30Mi
+  requests:
+    cpu: 100m
+    memory: 20Mi
+
+service:
+  name: cert-injector
+  port: 443
+
+certissuer:
+  image:
+    repository: yotsyni/certissuer
+    tag:
+    pullPolicy: IfNotPresent
+
+  resolver:
+    image: yotsyni/acmeresolver:v0.0.3
+  resources:
+    #  limits:
+    #    cpu: 100m
+    #    memory: 30Mi
+    requests:
+      cpu: 100m
+      memory: 20Mi

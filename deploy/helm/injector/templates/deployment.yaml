@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}
+spec:
+  selector:
+    matchLabels:
+      app: cert-injector
+  template:
+    metadata:
+      labels:
+        app: cert-injector
+    spec:
+      serviceAccountName: certissuer
+      containers:
+        - name: certissuer
+          image: "{{ .Values.certissuer.image.repository }}:{{ .Values.certissuer.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.certissuer.image.pullPolicy }}
+          resources:
+          {{- toYaml .Values.certissuer.resources | nindent 12 }}
+          env:
+            - name: RESOLVER_CUSTOM_IMAGE
+              value: {{ .Values.certissuer.resolver.image }}
+        - name: injector
+          ports:
+            - containerPort: 8443
+              name: https
+              protocol: TCP
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          resources:
+          {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+            - mountPath: /tmp/certs
+              name: cert
+              readOnly: true
+      volumes:
+        - name: cert
+          secret:
+            defaultMode: 420
+            secretName: {{ .Release.Name }}-tls
