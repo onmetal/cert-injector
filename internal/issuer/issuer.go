@@ -6,6 +6,7 @@ import (
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
+	"github.com/onmetal/injector/internal/kubernetes"
 
 	"github.com/go-acme/lego/v4/certificate"
 	"github.com/onmetal/injector/api"
@@ -58,7 +59,7 @@ func (u *User) GetPrivateKey() crypto.PrivateKey {
 }
 
 func New(ctx context.Context, k8sClient client.Client, l logr.Logger, req ctrl.Request) (Issuer, error) {
-	service, err := getService(ctx, k8sClient, req)
+	service, err := kubernetes.GetService(ctx, k8sClient, req)
 	if err != nil {
 		return nil, err
 	}
@@ -88,12 +89,6 @@ func New(ctx context.Context, k8sClient client.Client, l logr.Logger, req ctrl.R
 		svc:        service,
 		User:       user,
 	}, nil
-}
-
-func getService(ctx context.Context, c client.Client, req ctrl.Request) (*corev1.Service, error) {
-	s := &corev1.Service{}
-	err := c.Get(ctx, req.NamespacedName, s)
-	return s, err
 }
 
 func isRequired(m map[string]string) bool {

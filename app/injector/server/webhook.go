@@ -138,8 +138,8 @@ func addVolume(volumes []corev1.Volume, name string) []corev1.Volume {
 		Name: volumeName,
 		VolumeSource: corev1.VolumeSource{
 			Secret: &corev1.SecretVolumeSource{
-				SecretName:  name,
-				Optional:    &isOptional,
+				SecretName: name,
+				Optional:   &isOptional,
 			},
 		},
 	})
