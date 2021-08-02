@@ -6,7 +6,6 @@ import (
 	"github.com/onmetal/injector/api"
 	injerr "github.com/onmetal/injector/internal/errors"
 	appsv1 "k8s.io/api/apps/v1"
-	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -20,15 +19,9 @@ func (k *Kubernetes) InjectCertIntoDeployment() error {
 		}
 		return err
 	}
-	d.Annotations[api.AdmissionWebhookAnnotationInjectKey] = "true"
+	d.Annotations[api.AdmissionWebhookAnnotationInjectKey] = api.AnnotationKeyEnabled
 	d.Annotations[api.AdmissionWebhookAnnotationCertKey] = fmt.Sprintf("%s-tls", k.req.Name)
 	return k.Update(k.ctx, d)
-}
-
-func (k *Kubernetes) getService() (*corev1.Service, error) {
-	s := &corev1.Service{}
-	err := k.Get(k.ctx, k.req.NamespacedName, s)
-	return s, err
 }
 
 func (k *Kubernetes) getDeployment(selector map[string]string) (*appsv1.Deployment, error) {

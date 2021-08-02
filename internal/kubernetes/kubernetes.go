@@ -2,6 +2,7 @@ package kubernetes
 
 import (
 	"context"
+
 	"github.com/onmetal/injector/api"
 	injerr "github.com/onmetal/injector/internal/errors"
 	corev1 "k8s.io/api/core/v1"
@@ -15,10 +16,10 @@ import (
 type Kubernetes struct {
 	client.Client
 
-	ctx  context.Context
-	log  logr.Logger
-	cert *certificate.Resource
-	req  ctrl.Request
+	ctx      context.Context
+	log      logr.Logger
+	cert     *certificate.Resource
+	req      ctrl.Request
 	selector map[string]string
 }
 
@@ -31,11 +32,11 @@ func New(ctx context.Context, c client.Client, l logr.Logger, cert *certificate.
 		return nil, injerr.NotRequired()
 	}
 	return &Kubernetes{
-		Client: c,
-		ctx:    ctx,
-		log:    l,
-		cert:   cert,
-		req:    req,
+		Client:   c,
+		ctx:      ctx,
+		log:      l,
+		cert:     cert,
+		req:      req,
 		selector: s.Spec.Selector,
 	}, nil
 }
@@ -47,6 +48,6 @@ func GetService(ctx context.Context, c client.Client, req ctrl.Request) (*corev1
 }
 
 func isInjectNeeded(annotations map[string]string) bool {
-	 v, ok := annotations[api.AutoInjectAnnotationKey]
-	 return ok && v == "true"
+	v, ok := annotations[api.AutoInjectAnnotationKey]
+	return ok && v == api.AnnotationKeyEnabled
 }

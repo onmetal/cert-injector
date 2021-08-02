@@ -6,6 +6,7 @@ import (
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
+
 	"github.com/onmetal/injector/internal/kubernetes"
 
 	"github.com/go-acme/lego/v4/certificate"

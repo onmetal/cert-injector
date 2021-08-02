@@ -12,3 +12,5 @@ const (
 	AdmissionWebhookAnnotationInjectKey = "cert.injector.ko/mount"
 	AdmissionWebhookAnnotationCertKey   = "cert.injector.ko/cert-name"
 )
+
+const AnnotationKeyEnabled = "true"

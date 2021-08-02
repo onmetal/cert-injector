@@ -3,9 +3,10 @@ package server
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/onmetal/injector/api"
 	"io/ioutil"
 	"net/http"
+
+	"github.com/onmetal/injector/api"
 
 	"github.com/onmetal/injector/app/injector/patch"
 
