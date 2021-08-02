@@ -3,7 +3,7 @@ kind: Deployment
 metadata:
   name: nginx
   annotations:
-    cert.injector/inject: "true"
+    cert.injector/mount: "true"
     cert.injector/secret: "injector-tls"
 spec:
   selector:
