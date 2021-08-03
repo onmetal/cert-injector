@@ -18,11 +18,11 @@ service:
 certissuer:
   image:
     repository: yotsyni/certissuer
-    tag:
+    tag: 0.1.4
     pullPolicy: IfNotPresent
 
   resolver:
-    image: yotsyni/acmeresolver:v0.0.3
+    image: yotsyni/acmeresolver:0.1.4
   resources:
     #  limits:
     #    cpu: 100m
