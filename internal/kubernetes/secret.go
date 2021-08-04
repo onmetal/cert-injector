@@ -14,7 +14,11 @@ limitations under the License.
 package kubernetes
 
 import (
+	"context"
 	"fmt"
+
+	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	corev1 "k8s.io/api/core/v1"
 	apierr "k8s.io/apimachinery/pkg/api/errors"
@@ -45,4 +49,14 @@ func (k *Kubernetes) prepareSecret() *corev1.Secret {
 			corev1.TLSPrivateKeyKey: k.cert.PrivateKey,
 		},
 	}
+}
+
+func CreateSecret(ctx context.Context, c client.Client, s *corev1.Secret) error {
+	return c.Create(ctx, s)
+}
+
+func GetSecret(ctx context.Context, c client.Client, req ctrl.Request) (*corev1.Secret, error) {
+	s := &corev1.Secret{}
+	err := c.Get(ctx, req.NamespacedName, s)
+	return s, err
 }

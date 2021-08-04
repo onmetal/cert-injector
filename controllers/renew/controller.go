@@ -14,14 +14,15 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package controllers
+package renew
 
 import (
 	"context"
 
 	injerr "github.com/onmetal/injector/internal/errors"
-	"github.com/onmetal/injector/internal/issuer"
 	"github.com/onmetal/injector/internal/kubernetes"
+	"github.com/onmetal/injector/internal/renewal"
+
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -38,19 +39,16 @@ type Reconciler struct {
 // SetupWithManager sets up the controller with the Manager.
 func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&corev1.Service{}).
+		For(&corev1.Secret{}).
 		Complete(r)
 }
-
-//+kubebuilder:rbac:groups="",resources=services,verbs=get;list;watch;update;patch
-//+kubebuilder:rbac:groups="",resources=secrets,verbs=get;list;watch;create;update;patch;delete
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
 func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	reqLog := log.FromContext(ctx)
 
-	i, err := issuer.New(ctx, r.Client, reqLog, req)
+	i, err := renewal.New(ctx, r.Client, reqLog, req)
 	if err != nil {
 		if injerr.IsNotRequired(err) {
 			return ctrl.Result{}, nil
@@ -62,11 +60,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		reqLog.Info("can't register http solver", "error", solverErr)
 		return ctrl.Result{}, solverErr
 	}
-	if regErr := i.Register(); regErr != nil {
-		reqLog.Info("can't register client", "error", regErr)
-		return ctrl.Result{}, regErr
-	}
-	cert, err := i.Obtain()
+	cert, err := i.Renew()
 	if err != nil {
 		reqLog.Info("can't obtain certificate", "error", err)
 		return ctrl.Result{}, err
@@ -82,12 +76,6 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	}
 	if err := k8s.CreateOrUpdateSecretForCertificate(); err != nil {
 		reqLog.Info("can't create secret for certificate", "error", err)
-		return ctrl.Result{}, err
-	}
-	if err := k8s.InjectCertIntoDeployment(); err != nil {
-		if injerr.IsNotRequired(err) {
-			return ctrl.Result{}, nil
-		}
 		return ctrl.Result{}, err
 	}
 

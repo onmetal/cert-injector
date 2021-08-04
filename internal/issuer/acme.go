@@ -15,7 +15,6 @@ package issuer
 
 import (
 	"strings"
-	"time"
 
 	"github.com/onmetal/injector/api"
 
@@ -25,8 +24,6 @@ import (
 	"github.com/go-acme/lego/v4/registration"
 	injerr "github.com/onmetal/injector/internal/errors"
 )
-
-const waitServiceForSwitchSecond = 45 * time.Second
 
 func (c *certs) Solver() error {
 	externalSolver := solver.NewExternalSolver(c.ctx, c.k8sClient, c.log, c.svc)
@@ -53,7 +50,6 @@ func (c *certs) Obtain() (*certificate.Resource, error) {
 		Domains: domains,
 		Bundle:  true,
 	}
-	time.Sleep(waitServiceForSwitchSecond)
 	return c.legoClient.Certificate.Obtain(request)
 }
 
