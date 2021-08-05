@@ -11,7 +11,6 @@ COPY vendor vendor/
 
 # Copy the go source
 COPY app/certissuer/main.go main.go
-COPY api/ api/
 COPY controllers controllers/
 COPY app/certissuer app/certissuer
 COPY internal/ internal/

@@ -11,7 +11,6 @@ COPY vendor/ vendor/
 
 # Copy the go source
 COPY app/injector/main.go main.go
-COPY api/ api
 COPY internal internal/
 COPY app/injector app/injector
 COPY internal/ internal/
