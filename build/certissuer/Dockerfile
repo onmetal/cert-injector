@@ -11,9 +11,9 @@ COPY vendor vendor/
 
 # Copy the go source
 COPY app/certissuer/main.go main.go
+COPY app/injector/ app/injector/
 COPY controllers controllers/
-COPY app/certissuer app/certissuer
-COPY internal/ internal/
+COPY internal internal/
 
 # Build
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=on go build -a -o ${NAME} main.go
