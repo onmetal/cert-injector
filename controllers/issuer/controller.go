@@ -59,25 +59,22 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		reqLog.Info("can't create issuer", "error", err)
 		return ctrl.Result{}, err
 	}
-	if solverErr := i.Solver(); solverErr != nil {
+	if solverErr := i.RegisterChallengeProvider(); solverErr != nil {
 		reqLog.Info("can't register http solver", "error", solverErr)
 		return ctrl.Result{}, solverErr
 	}
-	if regErr := i.Register(); regErr != nil {
+	if regErr := i.RegisterAccount(); regErr != nil {
 		reqLog.Info("can't register client", "error", regErr)
 		return ctrl.Result{}, regErr
 	}
 	cert, err := i.Obtain()
 	if err != nil {
 		reqLog.Info("can't obtain certificate", "error", err)
-		return ctrl.Result{}, err
+		return ctrl.Result{}, nil
 	}
 
 	k8s, err := kubernetes.New(ctx, r.Client, reqLog, cert, req)
 	if err != nil {
-		if injerr.IsNotRequired(err) {
-			return ctrl.Result{}, nil
-		}
 		reqLog.Info("can't create kubernetes client", "error", err)
 		return ctrl.Result{}, err
 	}

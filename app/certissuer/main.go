@@ -17,6 +17,8 @@ import (
 	"flag"
 	"os"
 
+	"github.com/onmetal/injector/controllers/renew"
+
 	"github.com/onmetal/injector/controllers/issuer"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
@@ -73,7 +75,14 @@ func main() {
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "Cert")
+		setupLog.Error(err, "unable to create controller", "controller", "Issuer")
+		os.Exit(1)
+	}
+	if err = (&renew.Reconciler{
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "Renew")
 		os.Exit(1)
 	}
 	//+kubebuilder:scaffold:builder

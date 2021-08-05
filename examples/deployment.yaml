@@ -3,8 +3,8 @@ kind: Deployment
 metadata:
   name: nginx
   annotations:
-    cert.injector/mount: "true"
-    cert.injector/secret: "injector-tls"
+    cert.injector.ko/mount: "true"
+    cert.injector.ko/secret: "injector-tls"
 spec:
   selector:
     matchLabels:

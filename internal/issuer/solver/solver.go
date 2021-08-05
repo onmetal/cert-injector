@@ -19,7 +19,6 @@ import (
 	"os"
 	"time"
 
-	"github.com/onmetal/injector/api"
 	"k8s.io/apimachinery/pkg/labels"
 
 	"github.com/go-logr/logr"
@@ -30,16 +29,22 @@ import (
 )
 
 const acmeHTTPResolver = "acmeresolver-"
+
 const defaultImage = "yotsyni/acmeresolver:latest"
 
 const waitForServiceSwitchSecond = 45 * time.Second
+
+const (
+	InjectAnnotationKey = "cert.injector.ko/issue"
+	ResolverEnabled     = "true"
+)
 
 type Provider interface {
 	Present(domain, token, keyAuth string) error
 	CleanUp(domain, token, keyAuth string) error
 }
 
-type external struct {
+type kubernetes struct {
 	client.Client
 
 	ctx   context.Context
@@ -48,12 +53,12 @@ type external struct {
 	image string
 }
 
-func NewExternalSolver(ctx context.Context, c client.Client, l logr.Logger, svc *corev1.Service) Provider {
+func New(ctx context.Context, c client.Client, l logr.Logger, svc *corev1.Service) Provider {
 	image := defaultImage
 	if os.Getenv("RESOLVER_CUSTOM_IMAGE") != "" {
 		image = os.Getenv("RESOLVER_CUSTOM_IMAGE")
 	}
-	return &external{
+	return &kubernetes{
 		Client: c,
 		ctx:    ctx,
 		log:    l,
@@ -62,7 +67,7 @@ func NewExternalSolver(ctx context.Context, c client.Client, l logr.Logger, svc 
 	}
 }
 
-func (e *external) Present(domain, token, keyAuth string) error {
+func (e *kubernetes) Present(domain, token, keyAuth string) error {
 	if err := e.changeServiceSelector(); err != nil {
 		return err
 	}
@@ -74,12 +79,12 @@ func (e *external) Present(domain, token, keyAuth string) error {
 	return nil
 }
 
-func (e *external) changeServiceSelector() error {
-	e.svc.Spec.Selector["acmesolver"] = "true"
+func (e *kubernetes) changeServiceSelector() error {
+	e.svc.Spec.Selector["acmesolver"] = ResolverEnabled
 	return e.Client.Update(e.ctx, e.svc)
 }
 
-func (e *external) preparePod(domain, token, keyAuth string) *corev1.Pod {
+func (e *kubernetes) preparePod(domain, token, keyAuth string) *corev1.Pod {
 	return &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
 			GenerateName: acmeHTTPResolver, Namespace: e.svc.Namespace, Labels: e.svc.Spec.Selector},
@@ -92,7 +97,7 @@ func (e *external) preparePod(domain, token, keyAuth string) *corev1.Pod {
 			RestartPolicy: "Always"}}
 }
 
-func (e *external) CleanUp(domain, token, keyAuth string) error {
+func (e *kubernetes) CleanUp(domain, token, keyAuth string) error {
 	log.Println("clean up process started")
 
 	pods := &corev1.PodList{}
@@ -114,8 +119,8 @@ func (e *external) CleanUp(domain, token, keyAuth string) error {
 	return e.reverseServiceSelector()
 }
 
-func (e *external) reverseServiceSelector() error {
-	e.svc.ObjectMeta.Annotations[api.InjectAnnotationKey] = "done"
+func (e *kubernetes) reverseServiceSelector() error {
+	e.svc.ObjectMeta.Annotations[InjectAnnotationKey] = "done"
 	_, ok := e.svc.Spec.Selector["acmesolver"]
 	if ok {
 		delete(e.svc.Spec.Selector, "acmesolver")

@@ -5,6 +5,8 @@ import (
 	"crypto/ecdsa"
 	"fmt"
 
+	"github.com/onmetal/injector/internal/issuer/solver"
+
 	"github.com/go-acme/lego/v4/registration"
 
 	"k8s.io/apimachinery/pkg/types"
@@ -12,7 +14,6 @@ import (
 	"github.com/go-acme/lego/v4/certificate"
 	"github.com/go-acme/lego/v4/lego"
 	"github.com/go-logr/logr"
-	"github.com/onmetal/injector/api"
 	injerr "github.com/onmetal/injector/internal/errors"
 	"github.com/onmetal/injector/internal/issuer"
 	"github.com/onmetal/injector/internal/kubernetes"
@@ -21,8 +22,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-type Renewal interface {
-	Solver() error
+type Renewer interface {
+	RegisterChallengeProvider() error
 	Renew() (*certificate.Resource, error)
 }
 
@@ -35,7 +36,7 @@ type certs struct {
 	cert       *certificate.Resource
 }
 
-func New(ctx context.Context, k8sClient client.Client, l logr.Logger, req ctrl.Request) (Renewal, error) {
+func New(ctx context.Context, k8sClient client.Client, l logr.Logger, req ctrl.Request) (Renewer, error) {
 	service, err := kubernetes.GetService(ctx, k8sClient, req)
 	if err != nil {
 		return nil, err
@@ -43,8 +44,8 @@ func New(ctx context.Context, k8sClient client.Client, l logr.Logger, req ctrl.R
 	if !isRequired(service.Annotations) {
 		return nil, injerr.NotRequired()
 	}
-	caURL := issuer.GetConfig(api.CaURLAnnotationKey, service.Annotations)
-	email := issuer.GetConfig(api.EmailAnnotationKey, service.Annotations)
+	caURL := issuer.GetConfig(issuer.CaURLAnnotationKey, service.Annotations)
+	email := issuer.GetConfig(issuer.EmailAnnotationKey, service.Annotations)
 
 	currentCertificate, err := getCurrentCertificate(ctx, k8sClient, req)
 	if err != nil {
@@ -78,7 +79,7 @@ func New(ctx context.Context, k8sClient client.Client, l logr.Logger, req ctrl.R
 }
 
 func isRequired(m map[string]string) bool {
-	v, ok := m[api.InjectAnnotationKey]
+	v, ok := m[solver.InjectAnnotationKey]
 	return ok && v == "done"
 }
 
@@ -90,7 +91,7 @@ func getCurrentCertificate(ctx context.Context, c client.Client, req ctrl.Reques
 	if err != nil {
 		return nil, err
 	}
-	var cert *certificate.Resource
+	cert := new(certificate.Resource)
 	cert.Certificate = secret.Data[corev1.TLSCertKey]
 	cert.PrivateKey = secret.Data[corev1.TLSPrivateKeyKey]
 	return cert, nil

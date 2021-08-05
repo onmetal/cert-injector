@@ -18,6 +18,7 @@ package renew
 
 import (
 	"context"
+	"time"
 
 	injerr "github.com/onmetal/injector/internal/errors"
 	"github.com/onmetal/injector/internal/kubernetes"
@@ -30,6 +31,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
+const renewAfter35Days = 850 * time.Hour
+
 type Reconciler struct {
 	client.Client
 
@@ -39,7 +42,7 @@ type Reconciler struct {
 // SetupWithManager sets up the controller with the Manager.
 func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&corev1.Secret{}).
+		For(&corev1.Service{}).
 		Complete(r)
 }
 
@@ -56,21 +59,18 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		reqLog.Info("can't create issuer", "error", err)
 		return ctrl.Result{}, err
 	}
-	if solverErr := i.Solver(); solverErr != nil {
+	if solverErr := i.RegisterChallengeProvider(); solverErr != nil {
 		reqLog.Info("can't register http solver", "error", solverErr)
 		return ctrl.Result{}, solverErr
 	}
 	cert, err := i.Renew()
 	if err != nil {
 		reqLog.Info("can't obtain certificate", "error", err)
-		return ctrl.Result{}, err
+		return ctrl.Result{}, nil
 	}
 
 	k8s, err := kubernetes.New(ctx, r.Client, reqLog, cert, req)
 	if err != nil {
-		if injerr.IsNotRequired(err) {
-			return ctrl.Result{}, nil
-		}
 		reqLog.Info("can't create issuer", "error", err)
 		return ctrl.Result{}, err
 	}
@@ -78,7 +78,14 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		reqLog.Info("can't create secret for certificate", "error", err)
 		return ctrl.Result{}, err
 	}
+	if err := k8s.InjectCertIntoDeployment(); err != nil {
+		if injerr.IsNotRequired(err) {
+			reqLog.Info("reconciliation finished")
+			return ctrl.Result{}, nil
+		}
+		return ctrl.Result{}, err
+	}
 
 	reqLog.Info("reconciliation finished")
-	return ctrl.Result{}, nil
+	return ctrl.Result{RequeueAfter: renewAfter35Days}, nil
 }

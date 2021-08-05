@@ -21,16 +21,18 @@ import (
 	"crypto/rand"
 	"crypto/x509"
 
+	"github.com/onmetal/injector/internal/issuer/solver"
+
+	apierr "k8s.io/apimachinery/pkg/api/errors"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/pointer"
 
-	apierr "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 
 	"github.com/onmetal/injector/internal/kubernetes"
 
 	"github.com/go-acme/lego/v4/certificate"
-	"github.com/onmetal/injector/api"
 	injerr "github.com/onmetal/injector/internal/errors"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -44,9 +46,14 @@ import (
 const defaultEmail = "your@email.local"
 const privateKeySecretName = "le-issuer"
 
+const (
+	EmailAnnotationKey = "cert.injector.ko/email"
+	CaURLAnnotationKey = "cert.injector.ko/ca-url"
+)
+
 type Issuer interface {
-	Register() error
-	Solver() error
+	RegisterAccount() error
+	RegisterChallengeProvider() error
 	Obtain() (*certificate.Resource, error)
 }
 
@@ -87,17 +94,11 @@ func New(ctx context.Context, k8sClient client.Client, l logr.Logger, req ctrl.R
 	if !isRequired(service.Annotations) {
 		return nil, injerr.NotRequired()
 	}
-	caURL := GetConfig(api.CaURLAnnotationKey, service.Annotations)
-	email := GetConfig(api.EmailAnnotationKey, service.Annotations)
+	caURL := GetConfig(CaURLAnnotationKey, service.Annotations)
+	email := GetConfig(EmailAnnotationKey, service.Annotations)
 
-	var privateKey *ecdsa.PrivateKey
-	privateKey, err = GetPrivateKey(ctx, k8sClient, req.Namespace)
-	if err != nil && apierr.IsNotFound(err) {
-		privateKey, err = createPrivateKey(ctx, k8sClient, req.Namespace)
-		if err != nil {
-			return nil, err
-		}
-	} else {
+	privateKey, err := GetPrivateKey(ctx, k8sClient, req.Namespace)
+	if err != nil {
 		return nil, err
 	}
 
@@ -120,8 +121,8 @@ func New(ctx context.Context, k8sClient client.Client, l logr.Logger, req ctrl.R
 }
 
 func isRequired(m map[string]string) bool {
-	v, ok := m[api.InjectAnnotationKey]
-	return ok && v == api.AnnotationKeyEnabled
+	v, ok := m[solver.InjectAnnotationKey]
+	return ok && v == "true"
 }
 
 func GetPrivateKey(ctx context.Context, c client.Client, namespace string) (*ecdsa.PrivateKey, error) {
@@ -130,8 +131,12 @@ func GetPrivateKey(ctx context.Context, c client.Client, namespace string) (*ecd
 		Name:      privateKeySecretName,
 	}}
 	secretPrivateKey, err := kubernetes.GetSecret(ctx, c, objKey)
-	if err != nil {
-		return nil, err
+	if err != nil && apierr.IsNotFound(err) {
+		privateKey, err := createPrivateKey(ctx, c, namespace)
+		if err != nil {
+			return nil, err
+		}
+		return privateKey, nil
 	}
 	return x509.ParseECPrivateKey(secretPrivateKey.Data[corev1.TLSPrivateKeyKey])
 }
@@ -147,7 +152,7 @@ func createPrivateKey(ctx context.Context, c client.Client, namespace string) (*
 	}
 	preparedSecret := preparePrivateKeySecret(data, namespace)
 	if createErr := kubernetes.CreateSecret(ctx, c, preparedSecret); createErr != nil {
-		return privateKey, createErr
+		return nil, createErr
 	}
 	return privateKey, err
 }
@@ -163,14 +168,14 @@ func preparePrivateKeySecret(data []byte, namespace string) *corev1.Secret {
 
 func GetConfig(s string, m map[string]string) string {
 	switch s {
-	case api.CaURLAnnotationKey:
-		v, ok := m[api.CaURLAnnotationKey]
+	case CaURLAnnotationKey:
+		v, ok := m[CaURLAnnotationKey]
 		if !ok {
 			return lego.LEDirectoryStaging
 		}
 		return v
-	case api.EmailAnnotationKey:
-		v, ok := m[api.EmailAnnotationKey]
+	case EmailAnnotationKey:
+		v, ok := m[EmailAnnotationKey]
 		if !ok {
 			return defaultEmail
 		}

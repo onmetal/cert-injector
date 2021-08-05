@@ -16,8 +16,6 @@ package issuer
 import (
 	"strings"
 
-	"github.com/onmetal/injector/api"
-
 	"github.com/onmetal/injector/internal/issuer/solver"
 
 	"github.com/go-acme/lego/v4/certificate"
@@ -25,12 +23,14 @@ import (
 	injerr "github.com/onmetal/injector/internal/errors"
 )
 
-func (c *certs) Solver() error {
-	externalSolver := solver.NewExternalSolver(c.ctx, c.k8sClient, c.log, c.svc)
-	return c.legoClient.Challenge.SetHTTP01Provider(externalSolver)
+const domainsAnnotationKey = "cert.injector.ko/domains"
+
+func (c *certs) RegisterChallengeProvider() error {
+	s := solver.New(c.ctx, c.k8sClient, c.log, c.svc)
+	return c.legoClient.Challenge.SetHTTP01Provider(s)
 }
 
-func (c *certs) Register() error {
+func (c *certs) RegisterAccount() error {
 	reg, err := c.legoClient.Registration.Register(registration.RegisterOptions{TermsOfServiceAgreed: true})
 	if err != nil {
 		c.log.Info("can't register new user, %s", "error", err)
@@ -41,7 +41,7 @@ func (c *certs) Register() error {
 }
 
 func (c *certs) Obtain() (*certificate.Resource, error) {
-	d, ok := c.svc.Annotations[api.DomainsAnnotationKey]
+	d, ok := c.svc.Annotations[domainsAnnotationKey]
 	if !ok {
 		return nil, injerr.NotExist("domain name")
 	}

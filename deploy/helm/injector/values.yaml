@@ -1,6 +1,6 @@
 image:
   repository: yotsyni/cert-injector
-  tag: 0.1.4
+  tag: 0.2.0
   pullPolicy: IfNotPresent
 
 resources:
@@ -18,11 +18,11 @@ service:
 certissuer:
   image:
     repository: yotsyni/certissuer
-    tag: 0.1.4
+    tag: 0.2.0
     pullPolicy: IfNotPresent
 
   resolver:
-    image: yotsyni/acmeresolver:0.1.4
+    image: yotsyni/acmeresolver:0.2.0
   resources:
     #  limits:
     #    cpu: 100m
