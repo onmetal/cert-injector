@@ -16,6 +16,7 @@ package errors
 import (
 	"errors"
 	"fmt"
+	"strings"
 )
 
 const (
@@ -52,6 +53,8 @@ func IsAlreadyExists(err error) bool { return ReasonForError(err) == StatusReaso
 func IsNotRequired(err error) bool { return ReasonForError(err) == StatusReasonNotRequired }
 
 func IsNotFound(err error) bool { return ReasonForError(err) == StatusReasonNotFound }
+
+func IsRateLimited(err error) bool { return strings.Contains(err.Error(), "rateLimited")}
 
 func ReasonForError(err error) StatusReason {
 	if reason := IStatus(nil); errors.As(err, &reason) {

@@ -18,6 +18,7 @@ package issuer
 
 import (
 	"context"
+	"time"
 
 	injerr "github.com/onmetal/injector/internal/errors"
 	"github.com/onmetal/injector/internal/issuer"
@@ -28,6 +29,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
+
+const afterRateLimit7Days = 168 * time.Hour
 
 type Reconciler struct {
 	client.Client
@@ -69,6 +72,11 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	}
 	cert, err := i.Obtain()
 	if err != nil {
+		if injerr.IsRateLimited(err) {
+			reqLog.Info("can't obtain certificate", "error", err)
+			reqLog.Info("reconciliation finished")
+			return ctrl.Result{RequeueAfter: afterRateLimit7Days}, nil
+		}
 		reqLog.Info("can't obtain certificate", "error", err)
 		return ctrl.Result{}, nil
 	}

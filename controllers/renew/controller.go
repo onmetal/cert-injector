@@ -32,6 +32,7 @@ import (
 )
 
 const renewAfter35Days = 850 * time.Hour
+const afterRateLimit7Days = 168 * time.Hour
 
 type Reconciler struct {
 	client.Client
@@ -65,8 +66,13 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	}
 	cert, err := i.Renew()
 	if err != nil {
+		if injerr.IsRateLimited(err) {
+			reqLog.Info("can't obtain certificate", "error", err)
+			reqLog.Info("reconciliation finished")
+			return ctrl.Result{RequeueAfter: afterRateLimit7Days}, nil
+		}
 		reqLog.Info("can't obtain certificate", "error", err)
-		return ctrl.Result{}, nil
+		return ctrl.Result{}, err
 	}
 
 	k8s, err := kubernetes.New(ctx, r.Client, reqLog, cert, req)
