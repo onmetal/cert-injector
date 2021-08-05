@@ -22,6 +22,7 @@ const (
 	StatusReasonAlreadyExist StatusReason = "already exist"
 	StatusReasonNotExist     StatusReason = "not exist"
 	StatusReasonNotRequired  StatusReason = "not required"
+	StatusReasonNotFound     StatusReason = "not found"
 	StatusReasonUnknown      StatusReason = "unknown"
 )
 
@@ -49,6 +50,8 @@ func IsNotExist(err error) bool { return ReasonForError(err) == StatusReasonNotE
 func IsAlreadyExists(err error) bool { return ReasonForError(err) == StatusReasonAlreadyExist }
 
 func IsNotRequired(err error) bool { return ReasonForError(err) == StatusReasonNotRequired }
+
+func IsNotFound(err error) bool { return ReasonForError(err) == StatusReasonNotFound }
 
 func ReasonForError(err error) StatusReason {
 	if reason := IStatus(nil); errors.As(err, &reason) {
@@ -79,6 +82,15 @@ func NotRequired() *Error {
 	return &Error{
 		ErrStatus: Reason{
 			Message:      "component is under deletion",
+			StatusReason: StatusReasonNotRequired,
+		},
+	}
+}
+
+func NotFound() *Error {
+	return &Error{
+		ErrStatus: Reason{
+			Message:      "not found",
 			StatusReason: StatusReasonNotRequired,
 		},
 	}

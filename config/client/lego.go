@@ -18,14 +18,13 @@ import (
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
+	"crypto/x509"
 	"fmt"
-	"log"
-	"os"
-
 	"github.com/go-acme/lego/v4/certificate"
+	"github.com/go-acme/lego/v4/challenge/http01"
 	"github.com/go-acme/lego/v4/lego"
 	"github.com/go-acme/lego/v4/registration"
-	"github.com/onmetal/injector/config/client/solver"
+	"log"
 )
 
 // You'll need a user or account type that implements acme.User
@@ -48,14 +47,14 @@ func (u *MyUser) GetPrivateKey() crypto.PrivateKey {
 func main() {
 
 	// Create a user. New accounts need an email and private key to start.
-	privateKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	myUser := MyUser{
 		Email: "you@yours.com",
-		key:   privateKey,
+		key:   key,
 	}
 
 	config := lego.NewConfig(&myUser)
@@ -69,12 +68,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	externalHTTP, err := solver.NewExternalSolver()
-	if err != nil {
-		log.Printf("can't create external solver: %s", err)
-		os.Exit(1)
-	}
-	err = client.Challenge.SetHTTP01Provider(externalHTTP)
+	err = client.Challenge.SetHTTP01Provider(http01.NewProviderServer("", "8080"))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -87,7 +81,7 @@ func main() {
 	myUser.Registration = reg
 
 	request := certificate.ObtainRequest{
-		Domains: []string{"turn.local.de"},
+		Domains: []string{"kubernetes.docker.internal"},
 		Bundle:  true,
 	}
 	certificates, err := client.Certificate.Obtain(request)
@@ -97,6 +91,51 @@ func main() {
 
 	// Each certificate comes back with the cert bytes, the bytes of the client's
 	// private key, and a certificate URL. SAVE THESE TO DISK.
-	fmt.Printf("%#v\n", certificates)
+	//fmt.Printf("%#v\n", certificates)
+	k, err := x509.MarshalECPrivateKey(key)
+	if err != nil {
+		log.Fatal(err)
+	}
+	renew(*certificates, k)
+}
 
+func renew(certificat certificate.Resource, k []byte) {
+	log.Println("renewing in process")
+
+	key, err := x509.ParseECPrivateKey(k)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	myUser := MyUser{
+		Email: "you@yours.com",
+		key:   key,
+	}
+
+	config := lego.NewConfig(&myUser)
+	config.CADirURL = "https://localhost:14000/dir"
+
+	// A client facilitates communication with the CA server.
+	client, err := lego.NewClient(config)
+	if err != nil {
+		log.Fatal(err)
+	}
+	newRega, err := client.Registration.ResolveAccountByKey()
+	if err != nil {
+		log.Fatal(err)
+	}
+	myUser.Registration = newRega
+	err = client.Challenge.SetHTTP01Provider(http01.NewProviderServer("", "8080"))
+	if err != nil {
+		log.Fatal(err)
+	}
+	var cert certificate.Resource
+	cert.PrivateKey = certificat.PrivateKey
+	cert.Certificate = certificat.Certificate
+	newCert, err := client.Certificate.Renew(cert, true, false, "")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Printf("%#v\n", newCert.CertURL)
 }

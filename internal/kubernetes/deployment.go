@@ -16,36 +16,57 @@ package kubernetes
 import (
 	"fmt"
 
-	"github.com/onmetal/injector/api"
+	"k8s.io/apimachinery/pkg/types"
+
+	"github.com/onmetal/injector/app/injector/server"
 	injerr "github.com/onmetal/injector/internal/errors"
 	appsv1 "k8s.io/api/apps/v1"
-	"k8s.io/apimachinery/pkg/labels"
-	"sigs.k8s.io/controller-runtime/pkg/client"
+)
+
+const (
+	autoInjectAnnotationKey     = "cert.injector.ko/auto-inject"
+	deploymentNameAnnotationKey = "cert.injector.ko/deployment-name"
+	injectEnabled               = "true"
 )
 
 func (k *Kubernetes) InjectCertIntoDeployment() error {
-	d, err := k.getDeployment(k.selector)
+	if !isInjectNeeded(k.annotations) {
+		return injerr.NotRequired()
+	}
+	d, err := k.getDeployment()
 	if err != nil {
 		if injerr.IsNotExist(err) {
 			k.log.Info("deployment not exist")
 			return nil
 		}
+		if injerr.IsNotFound(err) {
+			k.log.Info("deployment name not found")
+			return nil
+		}
 		return err
 	}
-	d.Annotations[api.AdmissionWebhookAnnotationInjectKey] = api.AnnotationKeyEnabled
-	d.Annotations[api.AdmissionWebhookAnnotationCertKey] = fmt.Sprintf("%s-tls", k.req.Name)
+	d.Annotations[server.AdmissionWebhookAnnotationInjectKey] = injectEnabled
+	d.Annotations[server.AdmissionWebhookAnnotationCertKey] = fmt.Sprintf("%s-tls", k.req.Name)
 	return k.Update(k.ctx, d)
 }
 
-func (k *Kubernetes) getDeployment(selector map[string]string) (*appsv1.Deployment, error) {
-	filter := &client.ListOptions{
-		LabelSelector: client.MatchingLabelsSelector{Selector: labels.SelectorFromSet(selector)}}
-	d := &appsv1.DeploymentList{}
-	if err := k.List(k.ctx, d, filter); err != nil {
+func (k *Kubernetes) getDeployment() (*appsv1.Deployment, error) {
+	name, ok := k.annotations[deploymentNameAnnotationKey]
+	if !ok {
+		return nil, injerr.NotFound()
+	}
+	obj := types.NamespacedName{
+		Namespace: k.req.Namespace,
+		Name:      name,
+	}
+	d := &appsv1.Deployment{}
+	if err := k.Get(k.ctx, obj, d); err != nil {
 		return nil, err
 	}
-	if len(d.Items) == 0 {
-		return nil, injerr.NotExist("deployment")
-	}
-	return &d.Items[0], nil
+	return d, nil
+}
+
+func isInjectNeeded(annotations map[string]string) bool {
+	v, ok := annotations[autoInjectAnnotationKey]
+	return ok && v == injectEnabled
 }

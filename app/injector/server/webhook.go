@@ -19,8 +19,6 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"github.com/onmetal/injector/api"
-
 	"github.com/onmetal/injector/app/injector/patch"
 
 	v1 "k8s.io/api/admission/v1"
@@ -40,6 +38,10 @@ var (
 const (
 	jsonSpecContainers = "/spec/template/spec/containers"
 	jsonSpecVolumes    = "/spec/template/spec/volumes"
+)
+const (
+	AdmissionWebhookAnnotationInjectKey = "cert.injector.ko/mount"
+	AdmissionWebhookAnnotationCertKey   = "cert.injector.ko/cert-name"
 )
 
 const volumeName = "tls-certificates"
@@ -96,7 +98,7 @@ func (c *chiRouter) mutate(ar *v1.AdmissionReview) *v1.AdmissionResponse {
 		return &v1.AdmissionResponse{Allowed: true, UID: ar.Request.UID}
 	}
 
-	secretName, ok := deployment.Annotations[api.AdmissionWebhookAnnotationCertKey]
+	secretName, ok := deployment.Annotations[AdmissionWebhookAnnotationCertKey]
 	if !ok {
 		return &v1.AdmissionResponse{Allowed: false, UID: ar.Request.UID,
 			Result: &metav1.Status{Message: "secret with certs not provided"}}
@@ -126,7 +128,7 @@ func isMutationRequired(a map[string]string, volumes []corev1.Volume) bool {
 			return false
 		}
 	}
-	value, ok := a[api.AdmissionWebhookAnnotationInjectKey]
+	value, ok := a[AdmissionWebhookAnnotationInjectKey]
 	return ok && value == "true"
 }
 

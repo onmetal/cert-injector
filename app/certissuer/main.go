@@ -17,6 +17,10 @@ import (
 	"flag"
 	"os"
 
+	"github.com/onmetal/injector/controllers/renew"
+
+	"github.com/onmetal/injector/controllers/issuer"
+
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
@@ -27,8 +31,6 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
-
-	"github.com/onmetal/injector/controllers"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -69,11 +71,18 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err = (&controllers.Reconciler{
+	if err = (&issuer.Reconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "Cert")
+		setupLog.Error(err, "unable to create controller", "controller", "Issuer")
+		os.Exit(1)
+	}
+	if err = (&renew.Reconciler{
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "Renew")
 		os.Exit(1)
 	}
 	//+kubebuilder:scaffold:builder
