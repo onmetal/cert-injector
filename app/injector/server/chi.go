@@ -23,7 +23,7 @@ import (
 )
 
 type router interface {
-	ListenAndServe() error
+	ListenAndServeTLS(pathToCert, pathToKey string) error
 	Handlers()
 }
 
@@ -47,6 +47,12 @@ func (c *chiRouter) Handlers() {
 	})
 }
 
-func (c *chiRouter) ListenAndServe() error {
-	return http.ListenAndServeTLS(":8443", "/tmp/certs/tls.crt", "/tmp/certs/tls.key", c.Mux)
+func (c *chiRouter) ListenAndServeTLS(pathToCert, pathToKey string) error {
+	if pathToCert == "" {
+		pathToCert = "/tmp/certs/tls.crt"
+	}
+	if pathToKey == "" {
+		pathToKey = "/tmp/certs/tls.key"
+	}
+	return http.ListenAndServeTLS(":8443", pathToCert, pathToKey, c.Mux)
 }

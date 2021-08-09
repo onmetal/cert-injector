@@ -54,7 +54,7 @@ func IsNotRequired(err error) bool { return ReasonForError(err) == StatusReasonN
 
 func IsNotFound(err error) bool { return ReasonForError(err) == StatusReasonNotFound }
 
-func IsRateLimited(err error) bool { return strings.Contains(err.Error(), "rateLimited")}
+func IsRateLimited(err error) bool { return strings.Contains(err.Error(), "rateLimited") }
 
 func ReasonForError(err error) StatusReason {
 	if reason := IStatus(nil); errors.As(err, &reason) {

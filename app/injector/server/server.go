@@ -15,6 +15,7 @@ package server
 
 import (
 	"log"
+	"os"
 
 	"github.com/onmetal/injector/internal/logger"
 )
@@ -23,21 +24,31 @@ type Server interface {
 	Run() error
 }
 type server struct {
-	router router
-	log    logger.Logger
+	router    router
+	log       logger.Logger
+	cert, key string
 }
 
 func New() Server {
+	var cert, key string
+	if os.Getenv("CERT_PATH") != "" {
+		cert = os.Getenv("CERT_PATH")
+	}
+	if os.Getenv("KEY_PATH") != "" {
+		key = os.Getenv("KEY_PATH")
+	}
 	l := logger.New()
 	r := newRouter(l)
 	r.Handlers()
 	return &server{
 		router: r,
 		log:    l,
+		cert:   cert,
+		key:    key,
 	}
 }
 
 func (s *server) Run() error {
 	log.Printf("server started on port: %s", "8443")
-	return s.router.ListenAndServe()
+	return s.router.ListenAndServeTLS(s.cert, s.key)
 }
