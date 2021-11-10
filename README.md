@@ -1,80 +1,24 @@
-## Cert-injector
+<img src="./docs/assets/logo.png" alt="Logo of the project" align="right">
 
-Operator for issuing certificates for TCP applications 
-which couldn't be hidden behind ingress and when it's impossible to use DNS-challenge.
+# Cert-injector
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](http://makeapullrequest.com) [![GitHub license](https://img.shields.io/badge/license-APACHE-red.svg?style=flat-square)](https://github.com/onmetal/cert-injector/blob/master/LICENSE)
+
+## Background/Overview
+Operator for issuing certificates for TCP applications which couldn't be hidden behind ingress and when it's impossible to use DNS-challenge.
+
+## Start using or developing locally
+
+Please see our documentation in the [`/docs`](./docs) folder for more details.
+
+## Feedback and Support
+
+Feedback and contributions are always welcome!
+
+Please report bugs, suggestions or post questions by opening a [Github issue](https://github.com/onmetal/cert-injector/issues).
+
+## Licensing
+
+Project is under Apache 2.0 License.
+Can be found [here](https://github.com/onmetal/cert-injector/blob/master/LICENSE).
 
 
-### Certificate issuer:
-
-Will create secret with issued certificate.
-
-Annotations for service:
-```
-apiVersion: v1
-kind: Service
-metadata:
-  name: injector
-  annotations:
-    "cert.injector.ko/issue": "true"
-    "cert.injector.ko/ca-url": "https://acme-v02.api.letsencrypt.org/directory"
-    "cert.injector.ko/domains": "example.domain.com"
-    "cert.injector.ko/email": "your@email.com"
-    "cert.injector.ko/auto-inject": "true"
-spec:
-  type: LoadBalancer
-  ports:
-    - name: http
-      port: 80
-      targetPort: http
-  selector:
-    app: nginx
-```
-
-**"cert.injector.ko/issue"** - Specify service you want to issue certificate.
-
-**"cert.injector.ko/ca-url"** - Certificate authority URL. LE-staging use by default.
-
-**"cert.injector.ko/domains"** - Domain list, e.g. "domain.com,zzz.domain.com,yyy.domain.com".
-
-**"cert.injector.ko/email"** - Email address for Let's Encrypt account.
-
-**"cert.injector.ko/auto-inject"** - Will automatically inject annotations to the deployment.
-
-### Certificate injector:
-
-Will mutate deployment and will add volume and volumemounts.
-
-Certificate path: "/certs/..."
-
-Annotations for deployment:
-```
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: nginx
-  annotations:
-    cert.injector.ko/mount: "true"
-    cert.injector.ko/secret: "injector-tls"
-spec:
-  selector:
-    matchLabels:
-      app: nginx
-  template:
-    metadata:
-      labels:
-        app: nginx
-    spec:
-      containers:
-        - name: nginx
-          image: nginx
-
-```
-
-**"cert.injector.ko/mount"** - Specify deployment you want to add certificates.
-
-**"cert.injector.ko/cert-name"** - Specify secret name which contains certificates.
-
-### Install
-```
-helm install cert-injector ./deploy/helm/injector
-```
