@@ -1,0 +1,69 @@
+name: Release - Helm
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - 'deploy/**'
+      - '.github/workflows/publish-helm.yaml'
+      - '!**.md'
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - name: Install Helm
+        uses: azure/setup-helm@v2.0
+
+      - uses: actions/setup-python@v2
+        with:
+          python-version: 3.7
+
+      - name: Set up chart-testing
+        uses: helm/chart-testing-action@v2.2.0
+        with:
+          version: v3.4.0
+
+      - name: Run chart lint
+        id: lint
+        run: ct lint deploy/helm/injector
+
+      - name: Validate deployments
+        run: |
+          helm template -n cert-injector cert-injector deploy/helm/injector --debug 2>/dev/null > manifests.yaml
+
+          # install kubeval
+          wget https://github.com/instrumenta/kubeval/releases/latest/download/kubeval-linux-amd64.tar.gz &> /dev/null
+          tar xf kubeval-linux-amd64.tar.gz &> /dev/null
+          chmod a+x kubeval
+
+          # validate
+          ./kubeval manifests.yaml
+
+      - name: Configure Git
+        run: |
+          git config user.name "$GITHUB_ACTOR"
+          git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
+
+      - name: deploy
+        uses: peaceiris/actions-gh-pages@v3.8.0
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_branch: gh-pages
+          publish_dir: ./site 
+          keep_files: true
+
+      - name: Run chart-releaser
+        uses: helm/chart-releaser-action@v1.3.0
+        with:
+          charts_dir: deploy/helm
+        env:
+          CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+          CR_SKIP_EXISTING: true
