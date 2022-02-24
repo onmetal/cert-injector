@@ -1,4 +1,4 @@
-name: Release - Helm
+name: Lint - Helm
 
 on:
   push:
