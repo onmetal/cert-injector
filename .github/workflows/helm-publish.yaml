@@ -37,18 +37,6 @@ jobs:
         id: lint
         run: ct lint deploy/helm/injector
 
-      - name: Validate deployments
-        run: |
-          helm template -n cert-injector cert-injector deploy/helm/injector --debug 2>/dev/null > manifests.yaml
-
-          # install kubeval
-          wget https://github.com/instrumenta/kubeval/releases/latest/download/kubeval-linux-amd64.tar.gz &> /dev/null
-          tar xf kubeval-linux-amd64.tar.gz &> /dev/null
-          chmod a+x kubeval
-
-          # validate
-          ./kubeval manifests.yaml
-
   publish-chart:
     runs-on: self-hosted
     name: Publish Chart
