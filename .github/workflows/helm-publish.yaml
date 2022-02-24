@@ -6,7 +6,7 @@ on:
       - master
     paths:
       - 'deploy/**'
-      - '.github/workflows/publish-helm.yaml'
+      - '.github/workflows/helm-publish.yaml'
       - '!**.md'
   workflow_dispatch:
 
