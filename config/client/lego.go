@@ -20,14 +20,15 @@ import (
 	"crypto/rand"
 	"crypto/x509"
 	"fmt"
+	"log"
+
 	"github.com/go-acme/lego/v4/certificate"
 	"github.com/go-acme/lego/v4/challenge/http01"
 	"github.com/go-acme/lego/v4/lego"
 	"github.com/go-acme/lego/v4/registration"
-	"log"
 )
 
-// You'll need a user or account type that implements acme.User
+// You'll need a user or account type that implements acme.User.
 type MyUser struct {
 	Email        string
 	Registration *registration.Resource
@@ -37,15 +38,16 @@ type MyUser struct {
 func (u *MyUser) GetEmail() string {
 	return u.Email
 }
+
 func (u MyUser) GetRegistration() *registration.Resource {
 	return u.Registration
 }
+
 func (u *MyUser) GetPrivateKey() crypto.PrivateKey {
 	return u.key
 }
 
 func main() {
-
 	// Create a user. New accounts need an email and private key to start.
 	key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 	if err != nil {
@@ -91,7 +93,7 @@ func main() {
 
 	// Each certificate comes back with the cert bytes, the bytes of the client's
 	// private key, and a certificate URL. SAVE THESE TO DISK.
-	//fmt.Printf("%#v\n", certificates)
+
 	k, err := x509.MarshalECPrivateKey(key)
 	if err != nil {
 		log.Fatal(err)

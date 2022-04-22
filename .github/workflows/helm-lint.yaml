@@ -1,13 +1,8 @@
 name: Lint - Helm
 
 on:
-  push:
-    branches-ignore:
-      - main
-    paths:
-      - 'deploy/**'
-      - '.github/workflows/helm-publish.yaml'
-      - '!**.md'
+  pull_request:
+    branches: [ main ]
   workflow_dispatch:
 
 jobs:

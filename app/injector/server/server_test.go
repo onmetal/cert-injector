@@ -110,8 +110,10 @@ func TestServerRun(t *testing.T) {
 
 func TestEmptyBody(t *testing.T) {
 	a := assert.New(t)
-	client := &http.Client{Timeout: 30 * time.Second,
-		Transport: &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}}} // nolint:gosec
+	client := &http.Client{
+		Timeout:   30 * time.Second,
+		Transport: &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}},
+	}
 	req := &http.Request{
 		Method: "POST",
 		URL: &url.URL{
@@ -121,7 +123,7 @@ func TestEmptyBody(t *testing.T) {
 		},
 		Body: nil,
 	}
-	resp, err := client.Do(req) // nolint:bodyclose
+	resp, err := client.Do(req)
 	if err != nil {
 		t.Logf("failed to do a request: %s", err)
 		t.Fail()
@@ -145,12 +147,14 @@ func TestEmptyBody(t *testing.T) {
 
 func TestApplicationType(t *testing.T) {
 	a := assert.New(t)
-	var jsonStr = []byte(`{
+	jsonStr := []byte(`{
 		"uid":"1234",
 		"kind": {"group": "apps", "version": "v1", "kind": "Deployment"}
 	}`)
-	client := &http.Client{Timeout: 30 * time.Second,
-		Transport: &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}}} // nolint:gosec
+	client := &http.Client{
+		Timeout:   30 * time.Second,
+		Transport: &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}},
+	}
 
 	req := &http.Request{
 		Method: "POST",
@@ -161,7 +165,7 @@ func TestApplicationType(t *testing.T) {
 		},
 		Body: ioutil.NopCloser(bytes.NewBuffer(jsonStr)),
 	}
-	resp, err := client.Do(req) // nolint:bodyclose
+	resp, err := client.Do(req)
 	if err != nil {
 		t.Logf("failed to do a request: %s", err)
 		t.Fail()
@@ -179,12 +183,14 @@ func TestApplicationType(t *testing.T) {
 
 func TestDecode(t *testing.T) {
 	a := assert.New(t)
-	var jsonStr = []byte(`{
+	jsonStr := []byte(`{
 		"uid":"1234",
 		"kind": {"group": "apps", "version": "v1", "kind": "Deployment"}
 	}`)
-	client := &http.Client{Timeout: 30 * time.Second,
-		Transport: &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}}} // nolint:gosec
+	client := &http.Client{
+		Timeout:   30 * time.Second,
+		Transport: &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}},
+	}
 	req := &http.Request{
 		Method: "POST",
 		URL: &url.URL{
@@ -195,7 +201,7 @@ func TestDecode(t *testing.T) {
 		Header: map[string][]string{"Content-Type": {"application/json"}},
 		Body:   ioutil.NopCloser(bytes.NewBuffer(jsonStr)),
 	}
-	resp, err := client.Do(req) // nolint:bodyclose
+	resp, err := client.Do(req)
 	if err != nil {
 		t.Logf("failed to do a request: %s", err)
 		t.Fail()
@@ -228,8 +234,10 @@ func TestMutate(t *testing.T) {
 		t.Logf("failed marshal requestBody request: %s", err)
 		t.Fail()
 	}
-	client := &http.Client{Timeout: 30 * time.Second,
-		Transport: &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}}} //nolint:gosec
+	client := &http.Client{
+		Timeout:   30 * time.Second,
+		Transport: &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}},
+	}
 	req := &http.Request{
 		Method: "POST",
 		URL: &url.URL{
@@ -240,7 +248,7 @@ func TestMutate(t *testing.T) {
 		Header: map[string][]string{"Content-Type": {"application/json"}},
 		Body:   ioutil.NopCloser(bytes.NewBuffer(requestBody)),
 	}
-	resp, err := client.Do(req) // nolint:bodyclose
+	resp, err := client.Do(req)
 	if err != nil {
 		t.Logf("failed to do a request: %s", err)
 		t.Fail()

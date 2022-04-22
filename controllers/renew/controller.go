@@ -31,8 +31,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
-const renewAfter35Days = 850 * time.Hour
-const afterRateLimit7Days = 168 * time.Hour
+const (
+	renewAfter35Days    = 850 * time.Hour
+	afterRateLimit7Days = 168 * time.Hour
+)
 
 type Reconciler struct {
 	client.Client

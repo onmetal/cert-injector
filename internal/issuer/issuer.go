@@ -43,8 +43,10 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
-const defaultEmail = "your@email.local"
-const privateKeySecretName = "le-issuer"
+const (
+	defaultEmail         = "your@email.local"
+	privateKeySecretName = "le-issuer"
+)
 
 const (
 	EmailAnnotationKey = "cert.injector.ko/email"
@@ -67,7 +69,7 @@ type certs struct {
 	cert       *certificate.Resource
 }
 
-// User - user or account type that implements acme.User
+// User - user or account type that implements acme.User.
 type User struct {
 	Email        string
 	Registration *registration.Resource

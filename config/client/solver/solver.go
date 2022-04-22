@@ -16,17 +16,19 @@ package solver
 import (
 	"context"
 	"fmt"
-	ctrl "sigs.k8s.io/controller-runtime"
-
 	"log"
+
+	ctrl "sigs.k8s.io/controller-runtime"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	k8sclient "k8s.io/client-go/kubernetes"
 )
 
-const acmeHTTPResolver = "http-resolver"
-const defaultImage = "yotsyni/acmeresolver:latest"
+const (
+	acmeHTTPResolver = "http-resolver"
+	defaultImage     = "yotsyni/acmeresolver:latest"
+)
 
 type Provider interface {
 	Present(domain, token, keyAuth string) error
@@ -59,13 +61,18 @@ func (e *external) preparePod(domain, token string) *corev1.Pod {
 	labels := getLabelsForPod(name)
 	return &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: name, Namespace: "default", Labels: labels},
+			Name: name, Namespace: "default", Labels: labels,
+		},
 		Spec: corev1.PodSpec{
 			Containers: []corev1.Container{
 				{Name: "test", Image: defaultImage, Env: []corev1.EnvVar{
 					{Name: "DOMAIN_NAME", Value: domain},
-					{Name: "TOKEN", Value: token}}}},
-			RestartPolicy: "Always"}}
+					{Name: "TOKEN", Value: token},
+				}},
+			},
+			RestartPolicy: "Always",
+		},
+	}
 }
 
 func (e *external) CleanUp(domain, token, keyAuth string) error {

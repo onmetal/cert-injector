@@ -99,7 +99,8 @@ func isRequired(m map[string]string) bool {
 func getCurrentCertificate(ctx context.Context, c client.Client, req ctrl.Request) (*certificate.Resource, error) {
 	secObj := ctrl.Request{NamespacedName: types.NamespacedName{
 		Namespace: req.Namespace,
-		Name:      fmt.Sprintf("%s-tls", req.Name)}}
+		Name:      fmt.Sprintf("%s-tls", req.Name),
+	}}
 	secret, err := kubernetes.GetSecret(ctx, c, secObj)
 	if err != nil {
 		return nil, err

@@ -39,6 +39,7 @@ const (
 	jsonSpecContainers = "/spec/template/spec/containers"
 	jsonSpecVolumes    = "/spec/template/spec/volumes"
 )
+
 const (
 	AdmissionWebhookAnnotationInjectKey = "cert.injector.ko/mount"
 	AdmissionWebhookAnnotationCertKey   = "cert.injector.ko/cert-name"
@@ -71,7 +72,8 @@ func (c *chiRouter) mutateHandler(w http.ResponseWriter, r *http.Request) {
 	if _, _, err := deserializer.Decode(body, nil, admissionResponse); err != nil {
 		c.log.Error("Can't decode body", err)
 		admissionResponse.Response = &v1.AdmissionResponse{
-			Result: &metav1.Status{Message: err.Error()}}
+			Result: &metav1.Status{Message: err.Error()},
+		}
 	} else {
 		admissionResponse.Response = c.mutate(admissionResponse)
 	}
@@ -100,15 +102,19 @@ func (c *chiRouter) mutate(ar *v1.AdmissionReview) *v1.AdmissionResponse {
 
 	secretName, ok := deployment.Annotations[AdmissionWebhookAnnotationCertKey]
 	if !ok {
-		return &v1.AdmissionResponse{Allowed: false, UID: ar.Request.UID,
-			Result: &metav1.Status{Message: "secret with certs not provided"}}
+		return &v1.AdmissionResponse{
+			Allowed: false, UID: ar.Request.UID,
+			Result: &metav1.Status{Message: "secret with certs not provided"},
+		}
 	}
 
 	body, err := mutateDeployment(secretName, deployment)
 	if err != nil {
 		c.log.Error("can't mutate deployment", err)
-		return &v1.AdmissionResponse{Allowed: false, UID: ar.Request.UID,
-			Result: &metav1.Status{Message: "can't mutate deployment"}}
+		return &v1.AdmissionResponse{
+			Allowed: false, UID: ar.Request.UID,
+			Result: &metav1.Status{Message: "can't mutate deployment"},
+		}
 	}
 
 	return &v1.AdmissionResponse{Allowed: true, Patch: body, UID: ar.Request.UID, PatchType: getPatchType()}
@@ -149,7 +155,7 @@ func updateContainer(containers []corev1.Container) []corev1.Container {
 }
 
 func addVolume(volumes []corev1.Volume, name string) []corev1.Volume {
-	var isOptional = true
+	isOptional := true
 	return append(volumes, corev1.Volume{
 		Name: volumeName,
 		VolumeSource: corev1.VolumeSource{

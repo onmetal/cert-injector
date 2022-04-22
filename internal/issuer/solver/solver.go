@@ -87,14 +87,19 @@ func (e *kubernetes) changeServiceSelector() error {
 func (e *kubernetes) preparePod(domain, token, keyAuth string) *corev1.Pod {
 	return &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
-			GenerateName: acmeHTTPResolver, Namespace: e.svc.Namespace, Labels: e.svc.Spec.Selector},
+			GenerateName: acmeHTTPResolver, Namespace: e.svc.Namespace, Labels: e.svc.Spec.Selector,
+		},
 		Spec: corev1.PodSpec{
 			Containers: []corev1.Container{
 				{Name: "test", Image: e.image, Env: []corev1.EnvVar{
 					{Name: "DOMAIN_NAME", Value: domain},
 					{Name: "TOKEN", Value: token},
-					{Name: "AUTH_KEY", Value: keyAuth}}}},
-			RestartPolicy: "Always"}}
+					{Name: "AUTH_KEY", Value: keyAuth},
+				}},
+			},
+			RestartPolicy: "Always",
+		},
+	}
 }
 
 func (e *kubernetes) CleanUp(domain, token, keyAuth string) error {
@@ -103,7 +108,9 @@ func (e *kubernetes) CleanUp(domain, token, keyAuth string) error {
 	pods := &corev1.PodList{}
 	filter := &client.ListOptions{
 		LabelSelector: client.MatchingLabelsSelector{
-			Selector: labels.SelectorFromSet(e.svc.Spec.Selector)}}
+			Selector: labels.SelectorFromSet(e.svc.Spec.Selector),
+		},
+	}
 	if err := e.List(e.ctx, pods, filter); err != nil {
 		e.log.Info("can't list pods with labels", "error", err)
 		return err

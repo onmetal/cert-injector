@@ -79,7 +79,7 @@ func TestHandler(t *testing.T) {
 	}
 	client := &http.Client{Timeout: 30 * time.Second}
 
-	resp, err := client.Do(req) // nolint:bodyclose
+	resp, err := client.Do(req)
 	if err != nil {
 		t.Logf("failed to do a request: %s", err)
 		t.Fail()
