@@ -3,7 +3,7 @@ name: Lint - Helm
 on:
   push:
     branches-ignore:
-      - master
+      - main
     paths:
       - 'deploy/**'
       - '.github/workflows/helm-publish.yaml'

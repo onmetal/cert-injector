@@ -2,8 +2,8 @@ name: Release - Helm
 
 on:
   push:
-    branches:
-      - master
+    tags:
+      - v*
     paths:
       - 'deploy/**'
       - '.github/workflows/helm-publish.yaml'

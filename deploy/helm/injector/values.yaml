@@ -1,6 +1,6 @@
 image:
-  repository: yotsyni/cert-injector
-  tag: 0.2.1
+  repository: ghcr.io/onmetal/cert-injector
+  tag: 0.3.0
   pullPolicy: IfNotPresent
 
 resources:
@@ -17,12 +17,12 @@ service:
 
 certissuer:
   image:
-    repository: yotsyni/cert-issuer
-    tag: 0.2.1
+    repository: ghcr.io/onmetal/cert-issuer
+    tag: 0.3.0
     pullPolicy: IfNotPresent
 
   resolver:
-    image: yotsyni/acmeresolver:0.2.1
+    image: ghcr.io/onmetal/acmeresolver:0.3.0
   resources:
     #  limits:
     #    cpu: 100m
