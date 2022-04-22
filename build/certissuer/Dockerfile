@@ -11,6 +11,7 @@ RUN go mod download
 
 # Copy the go source
 COPY app/certissuer/main.go main.go
+COPY app/injector/ app/injector/
 COPY controllers controllers/
 COPY internal internal/
 
