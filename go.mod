@@ -4,12 +4,12 @@ go 1.18
 
 require (
 	github.com/go-acme/lego/v4 v4.4.0
-	github.com/go-chi/chi/v5 v5.0.3
+	github.com/go-chi/chi/v5 v5.0.7
 	github.com/go-logr/logr v0.4.0
 	github.com/onsi/ginkgo v1.16.4
 	github.com/onsi/gomega v1.13.0
 	github.com/stretchr/testify v1.7.1
-	go.uber.org/zap v1.18.1
+	go.uber.org/zap v1.21.0
 	k8s.io/api v0.21.3
 	k8s.io/apimachinery v0.21.3
 	k8s.io/client-go v0.21.3

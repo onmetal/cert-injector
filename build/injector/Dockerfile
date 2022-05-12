@@ -7,13 +7,12 @@ COPY go.mod go.mod
 COPY go.sum go.sum
 # cache deps before building and copying source so that we don't need to re-download as much
 # and so that source changes don't invalidate our downloaded layer
-COPY vendor/ vendor/
+RUN go mod download
 
 # Copy the go source
 COPY app/injector/main.go main.go
-COPY internal internal/
 COPY app/injector app/injector
-COPY internal/ internal/
+COPY internal internal/
 
 # Build
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=on go build -a -o ${NAME} main.go

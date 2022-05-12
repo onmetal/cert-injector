@@ -26,17 +26,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Login to Container Registry
-        uses: docker/login-action@v1
+        uses: docker/login-action@v2
         with:
           registry: ${{ env.registry }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Get metadata for docker
-        uses: docker/metadata-action@v3
+        uses: docker/metadata-action@v4
         id: meta
         with:
           images: |
@@ -52,7 +52,7 @@ jobs:
             latest=${{ github.ref == 'refs/heads/main' }}
 
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v1
+        uses: docker/setup-qemu-action@v2
         with:
           image: tonistiigi/binfmt:latest
           platforms: ${{env.platforms}}
@@ -64,18 +64,18 @@ jobs:
 
       - name: Set up Docker Buildx
         timeout-minutes: 5
-        uses: docker/setup-buildx-action@v1
+        uses: docker/setup-buildx-action@v2
         with:
           version: latest
           endpoint: builders
 
       - name: Build and push
-        uses: docker/build-push-action@v2
+        uses: docker/build-push-action@v3
         timeout-minutes: 60
         with:
           context: .
           file: ./build/certissuer/Dockerfile
           platforms: ${{ env.platforms }}
-          push: true
+          push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
