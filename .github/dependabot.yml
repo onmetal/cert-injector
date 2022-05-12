@@ -18,7 +18,23 @@ updates:
       - damyan
 
   - package-ecosystem: docker
-    directory: "/"
+    directory: "build/acmeresolver"
+    schedule:
+      interval: daily
+    open-pull-requests-limit: 10
+    reviewers:
+      - damyan
+
+  - package-ecosystem: docker
+    directory: "build/certissuer"
+    schedule:
+      interval: daily
+    open-pull-requests-limit: 10
+    reviewers:
+      - damyan
+
+  - package-ecosystem: docker
+    directory: "build/injector"
     schedule:
       interval: daily
     open-pull-requests-limit: 10
