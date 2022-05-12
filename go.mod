@@ -7,8 +7,8 @@ require (
 	github.com/go-chi/chi/v5 v5.0.7
 	github.com/go-logr/logr v0.4.0
 	github.com/onsi/ginkgo v1.16.5
+	github.com/stretchr/testify v1.7.1
 	github.com/onsi/gomega v1.14.0
-	github.com/stretchr/testify v1.7.0
 	go.uber.org/zap v1.21.0
 	k8s.io/api v0.21.3
 	k8s.io/apimachinery v0.21.3
