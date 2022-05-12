@@ -5,7 +5,7 @@ go 1.18
 require (
 	github.com/go-acme/lego/v4 v4.6.0
 	github.com/go-chi/chi/v5 v5.0.7
-	github.com/go-logr/logr v1.2.0
+	github.com/go-logr/logr v1.2.3
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.19.0
 	github.com/stretchr/testify v1.7.1
